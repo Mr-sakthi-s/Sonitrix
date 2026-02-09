@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Intelligent Sonar System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,Arial,sans-serif;
+}
+
+body{
+background:radial-gradient(circle at top,#061a2b,#020b14 70%);
+color:#c9f6ff;
+height:100vh;
+overflow:hidden;
+}
+
+/* ===== GRID LAYOUT ===== */
+.app{
+display:grid;
+grid-template-columns:300px minmax(520px,1fr) 300px;
+gap:16px;
+padding:16px;
+height:100vh;
+}
+
+/* ===== COMMON PANEL ===== */
+.panel{
+background:rgba(5,25,45,.78);
+border-radius:18px;
+border:1px solid rgba(0,234,255,.35);
+backdrop-filter:blur(14px);
+box-shadow:0 0 35px rgba(0,255,255,.12) inset;
+padding:16px;
+display:flex;
+flex-direction:column;
+}
+
+.title{
+text-align:center;
+color:#00eaff;
+letter-spacing:2px;
+font-size:14px;
+margin-bottom:12px;
+}
+
+/* ===== LEFT PANEL ===== */
+.left{
+gap:16px;
+}
+
+.block{
+background:#020b14;
+border-radius:14px;
+padding:14px;
+box-shadow:0 0 18px rgba(0,255,255,.08) inset;
+}
+
+.status div{
+margin:8px 0;
+font-size:14px;
+}
+
+.green{color:#00ff88;}
+
+.report{
+font-size:14px;
+min-height:90px;
+}
+
+/* ===== CENTER RADAR ===== */
+.center{
+align-items:center;
+justify-content:center;
+}
+
+canvas{
+width:100%;
+max-width:560px;
+aspect-ratio:1/1;
+}
+
+/* ===== RIGHT PANEL ===== */
+.right{
+align-items:center;
+justify-content:center;
+gap:18px;
+}
+
+/* AI FACE */
+.face{
+width:220px;
+height:220px;
+background:#021727;
+border-radius:24px;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+box-shadow:0 0 40px rgba(0,255,255,.35) inset;
+}
+
+.eyes{
+display:flex;
+width:100%;
+justify-content:space-around;
+margin-bottom:40px;
+}
+
+.eye{
+width:32px;
+height:32px;
+background:#00eaff;
+border-radius:6px;
+box-shadow:0 0 15px #00eaff;
+}
+
+.mouth{
+width:110px;
+height:8px;
+background:#00eaff;
+border-radius:0 0 12px 12px;
+box-shadow:0 0 14px #00eaff;
+transition:height .08s;
+}
+
+.mode{
+font-size:13px;
+letter-spacing:1px;
+color:#00ff88;
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1000px){
+.app{
+grid-template-columns:1fr;
+}
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- LEFT PANEL -->
+<div class="panel left">
+<div>
+<div class="title">STATUS</div>
+<div class="block status">
+<div>System: <span class="green">ONLINE</span></div>
+<div>Sensor: <span class="green">ACTIVE</span></div>
+<div>Tracks: 3</div>
+<div>Threat Level: <span class="green">LOW</span></div>
+</div>
+</div>
+
+<div>
+<div class="title">REPORTING</div>
+<div class="block report" id="report">
+No hostile behavior detected.
+</div>
+</div>
+</div>
+
+<!-- CENTER RADAR -->
+<div class="panel center">
+<div class="title">RADAR</div>
+<canvas id="radar" width="560" height="560"></canvas>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="panel right">
+<div class="title">AI VOICE ASSISTANT</div>
+
+<div class="face">
+<div class="eyes">
+<div class="eye"></div>
+<div class="eye"></div>
+</div>
+<div class="mouth" id="mouth"></div>
+</div>
+
+<div class="mode">MODE : CALM</div>
+</div>
+
+</div>
+
+<script>
+/* ===== RADAR DRAW ===== */
+const canvas=document.getElementById("radar");
+const ctx=canvas.getContext("2d");
+let angle=0;
+
+const targets=[
+{a:60,r:.6},
+{a:140,r:.4},
+{a:260,r:.75}
+];
+
+function drawRadar(){
+const w=canvas.width;
+const h=canvas.height;
+const cx=w/2,cy=h/2;
+const R=w/2-12;
+
+ctx.clearRect(0,0,w,h);
+
+// rings
+ctx.strokeStyle="rgba(0,234,255,.25)";
+for(let i=1;i<=4;i++){
+ctx.beginPath();
+ctx.arc(cx,cy,R*i/4,0,Math.PI*2);
+ctx.stroke();
+}
+
+// sweep
+ctx.fillStyle="rgba(0,234,255,.25)";
+ctx.beginPath();
+ctx.moveTo(cx,cy);
+ctx.arc(cx,cy,R,angle,angle+.45);
+ctx.closePath();
+ctx.fill();
+
+// outline
+ctx.strokeStyle="#00eaff";
+ctx.lineWidth=2;
+ctx.beginPath();
+ctx.arc(cx,cy,R,0,Math.PI*2);
+ctx.stroke();
+
+// targets
+targets.forEach(t=>{
+const rad=(t.a*Math.PI)/180;
+const x=cx+Math.cos(rad)*R*t.r;
+const y=cy+Math.sin(rad)*R*t.r;
+ctx.fillStyle="#ffe600";
+ctx.beginPath();
+ctx.arc(x,y,4,0,Math.PI*2);
+ctx.fill();
+});
+
+angle+=.02;
+requestAnimationFrame(drawRadar);
+}
+
+drawRadar();
+
+/* ===== AI LIP MOVEMENT (VOICE INTENSITY SIMULATION) ===== */
+const mouth=document.getElementById("mouth");
+setInterval(()=>{
+const intensity=Math.random()*22;
+mouth.style.height=8+intensity+"px";
+},120);
+</script>
+
+</body>
+</html>
