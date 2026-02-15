@@ -35,3 +35,5 @@ print(classification_report(y_test, model.predict(X_test)))
 # Save model
 joblib.dump(model, "hard_soft_model.pkl")
 print("\nModel saved as hard_soft_model.pkl")
+
+print("Probabilities:", model.predict_proba(X))
